@@ -86,8 +86,8 @@ Metrics gcdDecreaseBy1(long long m, long long n)
 }
 
 /**
- * Algorithm 3: Logarithmic Sieve Factorization via SPF Array
- * Efficiency Class: O(sqrt(N) log(log sqrt(N))) where N = max(m, n)
+ * Algorithm 3: Logarithmic Sieve Factorization via trial division
+ * Efficiency Class: O(sqrt(M)) where M is the minimum of the two elements
  * https://www.geeksforgeeks.org/dsa/print-all-prime-factors-of-a-given-number/
  */
 Metrics gcdPrimeFactorization(long long m, long long n) 
@@ -95,99 +95,91 @@ Metrics gcdPrimeFactorization(long long m, long long n)
     long long divisions = 0; // start divisions at 0
     auto start = high_resolution_clock::now(); // algorithm start 
     
-    if (m == 0 || n == 0) //if either is equal to 0 to start
+    if (m == 0 || n == 0) //if either is equal to 0 to start then instantly end and return since the must be 0
     {
-        auto end = high_resolution_clock::now(); // end algorithm right away since GCD must be 0
-        return {0, (double)duration_cast<nanoseconds>(end - start).count()}; //return metrics
+        auto end = high_resolution_clock::now(); 
+        return {0, (double)duration_cast<nanoseconds>(end - start).count()}; 
     }
     
-    // -------------------------------------------------------------
-    // FACTORIZING INPUT VALUE M (SUBLINEAR TRIAL DIVISION LOOP)
-    // -------------------------------------------------------------
-    map<int, int> factors_m; 
-    long long temp_m = m;  
+
+    map<int, int> factors_m; // create a map to store the prime factors and the frequencies of each prime factor
+    long long temp_m = m;  //used to edit the value of m without changing the value of the users input
     
-    if (temp_m > 1) 
+    if (temp_m > 1) //if m is equal to 1 then then it is already factorized
     {
-        // Extract all factors of 2 from m
-        while (temp_m % 2 == 0) 
+        
+        while (temp_m % 2 == 0) //if m is evenly divisible by 2, then divide m by 2 and register 2 as a prime factor of m in the map
         {
-            divisions++;
-            factors_m[2]++;
-            temp_m /= 2;
+            divisions++; //increase div count
+            factors_m[2]++; //increase freq count of prime factor 2
+            temp_m /= 2; //divides m by 2
         }
 
-        // Check odd numbers up to the square root of m
-        for (long long i = 3; i * i <= temp_m; i += 2) 
-        {
-            divisions++; // count boundary evaluation operation
-            while (temp_m % i == 0) 
+        
+        for (long long i = 3; i * i <= temp_m; i += 2)  //checks for odd number prime factor with a hard ceiling at the square root of m
+        {                                               //this is done because prime factors of m cannot be greater than the square root of m
+
+            while (temp_m % i == 0) //if a prime factor is found
             {
                 divisions++; // count successful factor division loop execution
-                factors_m[i]++;
-                temp_m /= i; // dynamically shrink boundary check space
+                factors_m[i]++; //increases the freq counter of the found prime factor
+                temp_m /= i; // take the prime factor out of m to continue checking
             }
         }
 
-        // If remainder value exceeds 1, it must be prime itself
-        if (temp_m > 1) 
+        
+        if (temp_m > 1) // If remainder value exceeds 1, it must be prime itself
         {
-            factors_m[temp_m]++;
+            factors_m[temp_m]++; //increase th efreq counter for prime factor
         }
     }
 
-    // -------------------------------------------------------------
-    // FACTORIZING INPUT VALUE N (SUBLINEAR TRIAL DIVISION LOOP)
-    // -------------------------------------------------------------
-    map<int, int> factors_n; 
-    long long temp_n = n; 
+    map<int, int> factors_n; // create a map to store the prime factors and the frequencies of each prime factor
+    long long temp_n = n; //used to edit the value of n without changing the value of the users input
     
-    if (temp_n > 1) 
+    if (temp_n > 1) //if n is equal to 1 then then it is already factorized
     {
-        // Extract all factors of 2 from n
-        while (temp_n % 2 == 0) 
+        
+        while (temp_n % 2 == 0)  //if n is evenly divisible by 2, then divide n by 2 and register 2 as a prime factor of n in the map
         {
-            divisions++;
-            factors_n[2]++;
-            temp_n /= 2;
+            
+            divisions++; //increase div count
+            factors_n[2]++; //increase frq count
+            temp_n /= 2; //divide the value of n by 2
+            
         }
-
-        // Check odd numbers up to the square root of n
-        for (long long i = 3; i * i <= temp_n; i += 2) 
-        {
-            divisions++; // count boundary evaluation operation
-            while (temp_n % i == 0) 
-            {
-                divisions++; // count successful factor division loop execution
-                factors_n[i]++;
-                temp_n /= i; // dynamically shrink boundary check space
+            // Check odd numbers up to the square root of n
+            for (long long i = 3; i * i <= temp_n; i += 2) //checks for odd number prime factor with a hard ceiling at the square root of m
+            {                                               //this is done because prime factors of m cannot be greater than the square root of n
+                while (temp_n % i == 0) //if a prime factor is found
+                {
+                    divisions++; // count successful factor division loop execution
+                    factors_n[i]++; //increase the freq counter of the found prime factor
+                    temp_n /= i; // dynamically shrink boundary check space
+                }
             }
-        }
 
-        // If remainder value exceeds 1, it must be prime itself
-        if (temp_n > 1) 
-        {
-            factors_n[temp_n]++;
-        }
+            
+            if (temp_n > 1) // If remainder value exceeds 1, it must be prime itself
+            {
+                factors_n[temp_n]++;//increase the freq cunter of the prime factor
+            }
+        
     }
-    
-    // -------------------------------------------------------------
-    // INTERSECTION MATRIX MERGE TO OBTAIN THE INTERSECTED GCD
-    // -------------------------------------------------------------
+
     long long gcd = 1; //initialize gcd to 1
-
-    // Loop through the map of all of the prime factors of m using the traditional iterator format
-    for (auto it = factors_m.begin(); it != factors_m.end(); ++it) 
+    
+    for (auto it = factors_m.begin(); it != factors_m.end(); ++it) //loop through all of the prime factors and their frequencies
     {
         int prime = it->first;   //initialize variable for the prime factor
-        int count = it->second;  //initialize variable for the count of each prime factor
+        int count = it->second;  //initialize variable for the frequency count of each prime factor
 
         if (factors_n.find(prime) != factors_n.end()) //if the prime factor is a shared prime factor in n
         {
             int sharedPrimeFactorCount = min(count, factors_n[prime]); //find the shared prime factor count
 
-            // Safe integer-based multiplication loops to completely avoid floating point truncation bugs
-            for (int i = 0; i < sharedPrimeFactorCount; ++i) 
+            
+            for (int i = 0; i < sharedPrimeFactorCount; ++i) // Safe integer-based multiplication loops to completely avoid floating point truncation bugs
             {
                 gcd *= prime;
             }
@@ -223,10 +215,10 @@ int main()
         
         double avg_t_euclid = 0;
         double avg_t_dec = 0; 
-        double avg_t_sieve = 0;
+        double avg_t_fact = 0;
         double avg_d_euclid = 0; 
         double avg_d_dec = 0;
-        double avg_d_sieve = 0;
+        double avg_d_fact = 0;
         
         uniform_int_distribution<long long> dist_m(base, base * 2);
         uniform_int_distribution<long long> dist_n(base / 3, base - 1);
@@ -246,13 +238,13 @@ int main()
             avg_t_dec += D.executionTime;    
             avg_d_dec += D.operations;
             
-            avg_t_sieve += F.executionTime; 
-            avg_d_sieve += F.operations;
+            avg_t_fact += F.executionTime; 
+            avg_d_fact += F.operations;
         }
         
         cout << "Algorithm 1 (Euclid):\n  Avg Divisions: " << (avg_d_euclid / 5.0) << "\n  Avg Time:       " << (avg_t_euclid / 5.0) << " ns\n\n";
         cout << "Algorithm 2 (Decrease-by-1):\n  Avg Divisions: " << (avg_d_dec / 5.0) << "\n  Avg Time:       " << (avg_t_dec / 5.0) << " ns\n\n";
-        cout << "Algorithm 3 (Prime Factorization):\n  Avg Divisions: " << (avg_d_sieve / 5.0) << "\n  Avg Time:       " << (avg_t_sieve / 5.0) << " ns\n\n";
+        cout << "Algorithm 3 (Prime Factorization):\n  Avg Divisions: " << (avg_d_fact / 5.0) << "\n  Avg Time:       " << (avg_t_fact / 5.0) << " ns\n\n";
     }
     
     return 0;
